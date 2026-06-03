@@ -1,6 +1,9 @@
 package com.example.bacabacabuku
 
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
+import java.security.MessageDigest
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -21,6 +24,31 @@ import com.example.bacabacabuku.ui.viewmodel.BookViewModelFactory
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Log SHA-1 fingerprint for API key configuration
+        try {
+            val packageInfo = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNING_CERTIFICATES)
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNATURES)
+            }
+            val signatures = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                packageInfo.signingInfo?.apkContentsSigners
+            } else {
+                @Suppress("DEPRECATION")
+                packageInfo.signatures
+            }
+            signatures?.forEach { signature ->
+                val md = MessageDigest.getInstance("SHA1")
+                val digest = md.digest(signature.toByteArray())
+                val hexString = digest.joinToString(":") { String.format("%02X", it) }
+                Log.d("SIGNING_INFO", "SHA-1: $hexString")
+            }
+        } catch (e: Exception) {
+            Log.e("SIGNING_INFO", "Error getting SHA-1", e)
+        }
+
         enableEdgeToEdge()
         
         val bookApp = application as? BookApplication

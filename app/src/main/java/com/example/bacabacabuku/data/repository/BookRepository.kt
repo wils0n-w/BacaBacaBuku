@@ -7,6 +7,7 @@ import com.example.bacabacabuku.data.local.UserEntity
 import com.example.bacabacabuku.data.remote.GoogleBooksService
 import com.example.bacabacabuku.data.remote.BookItem
 import kotlinx.coroutines.flow.Flow
+import retrofit2.HttpException
 
 class BookRepository(
     private val bookDao: BookDao,
@@ -29,6 +30,10 @@ class BookRepository(
             val response = googleBooksService.searchBooks(query, apiKey)
             android.util.Log.d("BookRepository", "Search results count: ${response.items?.size ?: 0}")
             response.items ?: emptyList()
+        } catch (e: HttpException) {
+            val errorBody = e.response()?.errorBody()?.string()
+            android.util.Log.e("BookRepository", "Search failed with HTTP ${e.code()}: $errorBody")
+            emptyList()
         } catch (e: Exception) {
             android.util.Log.e("BookRepository", "Search failed", e)
             emptyList()
