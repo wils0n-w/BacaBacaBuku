@@ -11,6 +11,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,6 +34,14 @@ fun BookDetailScreen(
 ) {
     val book by viewModel.getBookByIdFlow(bookId).collectAsState(initial = null)
     val context = LocalContext.current
+    
+    var showGenreDialog by remember { mutableStateOf(false) }
+    var tempReview by remember { mutableStateOf("") }
+    
+    // Update tempReview when book changes
+    LaunchedEffect(book?.review) {
+        tempReview = book?.review ?: ""
+    }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
@@ -151,6 +160,9 @@ fun BookDetailScreen(
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Genre: ${currentBook.genre}", style = MaterialTheme.typography.bodyLarge)
+                    IconButton(onClick = { showGenreDialog = true }) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit Genre", modifier = Modifier.size(20.dp))
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -163,9 +175,54 @@ fun BookDetailScreen(
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
+                Text("Personal Review", style = MaterialTheme.typography.titleLarge)
+                OutlinedTextField(
+                    value = tempReview,
+                    onValueChange = { tempReview = it },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 120.dp),
+                    placeholder = { Text("Write your thoughts about this book...") },
+                    trailingIcon = {
+                        if (tempReview != (currentBook.review ?: "")) {
+                            IconButton(onClick = { viewModel.updateBookReview(currentBook, tempReview) }) {
+                                Icon(Icons.Default.Save, contentDescription = "Save Review")
+                            }
+                        }
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
                 Text("Synopsis", style = MaterialTheme.typography.titleLarge)
                 Text(currentBook.description ?: "No description available.", style = MaterialTheme.typography.bodyMedium)
             }
+        }
+
+        if (showGenreDialog && currentBook != null) {
+            var newGenre by remember { mutableStateOf(currentBook.genre) }
+            AlertDialog(
+                onDismissRequest = { showGenreDialog = false },
+                title = { Text("Edit Genre") },
+                text = {
+                    OutlinedTextField(
+                        value = newGenre,
+                        onValueChange = { newGenre = it },
+                        label = { Text("Genre") },
+                        singleLine = true
+                    )
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        viewModel.updateBookGenre(currentBook, newGenre)
+                        showGenreDialog = false
+                    }) {
+                        Text("Save")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showGenreDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
         }
     }
 }

@@ -13,5 +13,6 @@ data class BookEntity(
     val description: String?,
     val genre: String,
     val status: String,
-    val rating: Float
+    val rating: Float,
+    val review: String? = null
 )

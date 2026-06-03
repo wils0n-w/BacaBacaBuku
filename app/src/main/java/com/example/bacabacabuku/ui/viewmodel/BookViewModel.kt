@@ -91,6 +91,18 @@ class BookViewModel(private val repository: BookRepository) : ViewModel() {
         }
     }
 
+    fun updateBookGenre(book: BookEntity, newGenre: String) {
+        viewModelScope.launch {
+            repository.updateBook(book.copy(genre = newGenre))
+        }
+    }
+
+    fun updateBookReview(book: BookEntity, newReview: String) {
+        viewModelScope.launch {
+            repository.updateBook(book.copy(review = newReview))
+        }
+    }
+
     fun deleteBook(book: BookEntity) {
         viewModelScope.launch {
             repository.deleteBook(book)

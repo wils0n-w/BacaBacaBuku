@@ -8,6 +8,8 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -30,6 +32,8 @@ fun LibraryScreen(
     val allBooks by viewModel.allBooks.collectAsState()
     var selectedStatus by remember { mutableStateOf("All") }
     var selectedGenre by remember { mutableStateOf("All") }
+    var searchQuery by remember { mutableStateOf("") }
+    var isSearchActive by remember { mutableStateOf(false) }
 
     val statuses = listOf("All", "To Be Read", "Reading", "Read", "Dropped", "DNF")
     val genres = remember(allBooks) {
@@ -38,14 +42,44 @@ fun LibraryScreen(
 
     val filteredBooks = allBooks.filter {
         (selectedStatus == "All" || it.status == selectedStatus) &&
-        (selectedGenre == "All" || it.genre == selectedGenre)
+        (selectedGenre == "All" || it.genre == selectedGenre) &&
+        (searchQuery.isBlank() || it.title.contains(searchQuery, ignoreCase = true) || it.authors.contains(searchQuery, ignoreCase = true))
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("My Library") },
+                title = {
+                    if (isSearchActive) {
+                        TextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder = { Text("Search your library...") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                                unfocusedContainerColor = androidx.compose.ui.graphics.Color.Transparent
+                            ),
+                            trailingIcon = {
+                                IconButton(onClick = { 
+                                    searchQuery = ""
+                                    isSearchActive = false
+                                }) {
+                                    Icon(Icons.Default.Close, contentDescription = "Close Search")
+                                }
+                            }
+                        )
+                    } else {
+                        Text("My Library")
+                    }
+                },
                 actions = {
+                    if (!isSearchActive) {
+                        IconButton(onClick = { isSearchActive = true }) {
+                            Icon(Icons.Default.Search, contentDescription = "Search")
+                        }
+                    }
                     IconButton(onClick = {
                         viewModel.logout()
                         onLogoutClick()
